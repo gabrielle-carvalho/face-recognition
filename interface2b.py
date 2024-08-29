@@ -6,6 +6,8 @@ from scipy.spatial import distance
 from tkinter import *
 from tkinter import messagebox
 from PIL import Image, ImageTk
+key = cv2. waitKey(1)
+img_count = 0
 
 # Load Dlib's face detector and recognition model
 detector = dlib.get_frontal_face_detector()
@@ -48,10 +50,11 @@ def compute_face_descriptor(frame):
 def match_face(face_descriptor, labels, descriptors):
     distances = [distance.euclidean(face_descriptor, descriptor) for descriptor in descriptors]
     min_distance = min(distances)
-    if min_distance < 0.6:  # Threshold, can be adjusted
+    if min_distance < 0.9:  # Threshold, can be adjusted
         index = distances.index(min_distance)
         return labels[index]
     return "Unknown"
+
 
 
 class App:
@@ -98,7 +101,13 @@ class App:
                     face_descriptor = facerec.compute_face_descriptor(frame, shape)
                     name = match_face(np.array(face_descriptor), self.labels, self.descriptors)
                     new_labels[(face.left(), face.top())] = name
+                    img_count =+ 1
+                    
+                    
                 self.face_labels = new_labels
+
+                
+
             else:
                 for face in faces:
                     if (face.left(), face.top()) not in self.face_labels:
@@ -115,10 +124,18 @@ class App:
             self.camera_label.configure(image=image)
             self.camera_label.image = image
             self.master.after(30, self.update_frame)
+            photo = f"./predict/{name, img_count}.jpg"
+            cv2.imwrite(photo, frame)
+            # foi feito: coloquei para cada label que ele reconhece, uma foto de predict e armazenar na pasta predict
+            
 
+        
+            
+        
     def on_capture_click(self):
         name = self.name_entry.get()
         ret, frame = self.cap.read()
+
         if ret:
             path = f"./images/{name}"
             if not os.path.exists(path):
