@@ -6,6 +6,8 @@ from scipy.spatial import distance
 from tkinter import *
 from tkinter import messagebox
 from PIL import Image, ImageTk
+key = cv2. waitKey(1)
+img_count = 0
 
 # Load Dlib's face detector and recognition model
 detector = dlib.get_frontal_face_detector()
@@ -54,6 +56,7 @@ def match_face(face_descriptor, labels, descriptors):
     return "Unknown"
 
 
+
 class App:
     def __init__(self, master):
         self.master = master
@@ -93,12 +96,19 @@ class App:
             self.frame_counter += 1
             if self.frame_counter % 1 == 0:
                 new_labels = {}
+                
                 for face in faces:
                     shape = sp(gray, face)
                     face_descriptor = facerec.compute_face_descriptor(frame, shape)
                     name = match_face(np.array(face_descriptor), self.labels, self.descriptors)
                     new_labels[(face.left(), face.top())] = name
+                    
+                    
                 self.face_labels = new_labels
+                
+
+                
+
             else:
                 for face in faces:
                     if (face.left(), face.top()) not in self.face_labels:
@@ -114,11 +124,21 @@ class App:
             image = ImageTk.PhotoImage(image=Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)))
             self.camera_label.configure(image=image)
             self.camera_label.image = image
-            self.master.after(30, self.update_frame)
+            self.master.after(30, self.update_frame) #
+            img_count =+ 1 # ver como incrementar, a cada frame em que uma determinada label aparece, mais um em img_count
+            
+            photo = f"./predict/{name, img_count}.jpg"
+            cv2.imwrite(photo, frame)
+            # coloca para cada label que ele reconhece, uma foto de predict e armazena na pasta predict
+            
 
+        
+            
+        
     def on_capture_click(self):
         name = self.name_entry.get()
         ret, frame = self.cap.read()
+
         if ret:
             path = f"./images/{name}"
             if not os.path.exists(path):
