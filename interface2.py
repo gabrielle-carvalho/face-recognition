@@ -1,18 +1,20 @@
-import sys
+#codigo com interface comentada
+
+import os
 import cv2
 import dlib
 import numpy as np
-import os
 from scipy.spatial import distance
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QLabel
-from PyQt5.QtCore import pyqtSlot, QTimer
-from PyQt5.QtGui import QImage, QPixmap
-
+from tkinter import *
+from tkinter import messagebox
+from PIL import Image, ImageTk
+key = cv2. waitKey(1)
 
 # Load Dlib's face detector and recognition model
 detector = dlib.get_frontal_face_detector()
 sp = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
 facerec = dlib.face_recognition_model_v1('dlib_face_recognition_resnet_model_v1.dat')
+
 
 def prepare_training_data(data_folder_path):
     labels = []  # Names of the people
@@ -37,7 +39,6 @@ def prepare_training_data(data_folder_path):
     return labels, descriptors
 
 
-# Function to compute face descriptor
 def compute_face_descriptor(frame):
     faces = detector(frame)
     if len(faces) > 0:
@@ -46,10 +47,8 @@ def compute_face_descriptor(frame):
         return np.array(face_descriptor)
     return None
 
-# Function to match face descriptors (you should implement this based on your dataset)
-# Function to match face descriptors
+
 def match_face(face_descriptor, labels, descriptors):
-    # Find the descriptor in your database that is closest to the detected face
     distances = [distance.euclidean(face_descriptor, descriptor) for descriptor in descriptors]
     min_distance = min(distances)
     if min_distance < 0.6:  # Threshold, can be adjusted
@@ -58,117 +57,102 @@ def match_face(face_descriptor, labels, descriptors):
     return "Unknown"
 
 
-class App(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.title = 'Face Recognition Software'
-        self.left = 10
-        self.top = 10
-        self.width = 1000
-        self.height = 600
-        self.frame_counter = 0  # Initialize frame counter
+
+class App:
+    def __init__(self, master):
+        self.master = master
+        # self.master.title('Face Recognition Software')
+        # self.master.geometry('1000x1000')
+        self.frame_counter = 0
         self.recognized_faces = {}
         self.labels, self.descriptors = prepare_training_data("images")
-        self.initUI()
-    
-    def initUI(self):
-        self.setWindowTitle(self.title)
-        self.setGeometry(self.left, self.top, self.width, self.height)
 
         self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-        # Main layout
-        main_layout = QVBoxLayout()
 
-        # Camera label
-        self.camera_label = QLabel(self)
-        main_layout.addWidget(self.camera_label)
+        self.camera_label = Label(self.master)
+        self.camera_label.pack()
 
-        # Name input
-        self.name_input = QLineEdit(self)
-        main_layout.addWidget(self.name_input)
+        # self.name_label = Label(self.master, text="Enter Name:")
+        # self.name_label.pack()
 
-        # Buttons layout
-        buttons_layout = QHBoxLayout()
+        # self.name_entry = Entry(self.master)
+        # self.name_entry.pack()
 
-        # Capture button
-        self.capture_button = QPushButton('Capture', self)
-        self.capture_button.clicked.connect(self.on_capture_click)
-        buttons_layout.addWidget(self.capture_button)
+        # self.capture_button = Button(self.master, text="Capture", command=self.on_capture_click)
+        # self.capture_button.pack(side=LEFT)
 
-        # Retrain button
-        self.retrain_button = QPushButton('Retrain', self)
-        self.retrain_button.clicked.connect(self.on_retrain_click)
-        buttons_layout.addWidget(self.retrain_button)
+        # self.retrain_button = Button(self.master, text="Retrain", command=self.on_retrain_click)
+        # self.retrain_button.pack(side=LEFT)
 
-        # Add buttons layout to main layout
-        main_layout.addLayout(buttons_layout)
-
-        self.setLayout(main_layout)
-
-        # Camera setup
         self.cap = cv2.VideoCapture(0)
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_frame)
-        self.timer.start(1000.0/30)
+        self.update_frame()
 
     def update_frame(self):
         ret, frame = self.cap.read()
-        # Flip the frame horizontally (mirror effect)
         frame = cv2.flip(frame, 1)
         if ret:
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             faces = detector(gray)
 
-            # Perform face recognition every 10 frames
             self.frame_counter += 1
             if self.frame_counter % 1 == 0:
                 new_labels = {}
+                
                 for face in faces:
                     shape = sp(gray, face)
                     face_descriptor = facerec.compute_face_descriptor(frame, shape)
                     name = match_face(np.array(face_descriptor), self.labels, self.descriptors)
                     new_labels[(face.left(), face.top())] = name
+                    
+                    
                 self.face_labels = new_labels
+                
+    
+
             else:
-                # Use existing labels if not performing recognition
                 for face in faces:
                     if (face.left(), face.top()) not in self.face_labels:
                         self.face_labels[(face.left(), face.top())] = "Unknown"
 
-            # Draw rectangles and labels for each face
             for face in faces:
                 x, y, w, h = face.left(), face.top(), face.width(), face.height()
                 cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
                 label = self.face_labels.get((x, y), "Unknown")
                 cv2.putText(frame, label, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
+            # frame = cv2.resize(frame, (1000, int(1000 * frame.shape[0] / frame.shape[1])))
+            # image = ImageTk.PhotoImage(image=Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)))
+            # self.camera_label.configure(image=image)
+            # self.camera_label.image = image
+            self.master.after(30, self.update_frame) 
+            
+            photo = f"./predict/{name, self.frame_counter}.jpg"
+            cv2.imwrite(photo, frame)
+            # coloca para cada label que ele reconhece, uma foto de predict e armazena na pasta predict
+            
+ 
+    # def on_capture_click(self):
+    #     name = self.name_entry.get()
+    #     ret, frame = self.cap.read()
 
-            # Resize the image to fit the window
-            frame = cv2.resize(frame, (self.width, int(self.width * frame.shape[0] / frame.shape[1])))
-            image = QImage(frame, frame.shape[1], frame.shape[0], frame.strides[0], QImage.Format_RGB888).rgbSwapped()
-            self.camera_label.setPixmap(QPixmap.fromImage(image))
+    #     if ret:
+    #         path = f"./images/{name}"
+    #         if not os.path.exists(path):
+    #             os.mkdir(path)
+    #         picnumber = len(os.listdir(path))
+    #         cv2.imwrite(f'{path}/{picnumber}.png', frame)
+    #         messagebox.showinfo("Info", "Image Captured Successfully!")
+
+    # def on_retrain_click(self):
+    #     self.labels, self.descriptors = prepare_training_data("images")
+    #     messagebox.showinfo("Info", "Model Retrained with Updated Images!")
 
 
-    @pyqtSlot()
-    def on_capture_click(self):
-        name = self.name_input.text()
-        ret, frame = self.cap.read()
-        if ret:
-            # Here you can add code to process and save the frame with the associated name
-            path = f"./images/{name}"
-            if not os.path.exists(path):
-                os.mkdir(path)
-            picnumber = len(os.listdir(path))
-            cv2.imwrite(f'{path}/{picnumber}.png', frame)
+def main():
+    root = Tk()
+    app = App(root)
+    root.mainloop()
 
-    @pyqtSlot()
-    def on_retrain_click(self):
-        # Add code for the retraining process here
-        self.labels, self.descriptors = prepare_training_data("images")
-        print("Retrained the model with updated images")
 
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    ex = App()
-    ex.show()
-    sys.exit(app.exec_())
+    main()
