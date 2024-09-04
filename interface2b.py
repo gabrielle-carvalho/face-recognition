@@ -13,7 +13,6 @@ detector = dlib.get_frontal_face_detector()
 sp = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
 facerec = dlib.face_recognition_model_v1('dlib_face_recognition_resnet_model_v1.dat')
 
-
 def prepare_training_data(data_folder_path):
     labels = []  # Names of the people
     descriptors = []  # Face descriptors
@@ -36,7 +35,6 @@ def prepare_training_data(data_folder_path):
 
     return labels, descriptors
 
-
 def compute_face_descriptor(frame):
     faces = detector(frame)
     if len(faces) > 0:
@@ -45,7 +43,6 @@ def compute_face_descriptor(frame):
         return np.array(face_descriptor)
     return None
 
-
 def match_face(face_descriptor, labels, descriptors):
     distances = [distance.euclidean(face_descriptor, descriptor) for descriptor in descriptors]
     min_distance = min(distances)
@@ -53,8 +50,6 @@ def match_face(face_descriptor, labels, descriptors):
         index = distances.index(min_distance)
         return labels[index]
     return "Unknown"
-
-
 
 class App:
     def __init__(self, master):
@@ -91,8 +86,6 @@ class App:
                     
                 self.face_labels = new_labels
                 
-    
-
             else:
                 for face in faces:
                     if (face.left(), face.top()) not in self.face_labels:
@@ -108,7 +101,6 @@ class App:
             
             photo = f"./predict/{name, self.frame_counter}.jpg"
             cv2.imwrite(photo, frame)
-            
 
 def main():
     root = Tk()
