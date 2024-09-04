@@ -14,7 +14,6 @@ detector = dlib.get_frontal_face_detector()
 sp = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
 facerec = dlib.face_recognition_model_v1('dlib_face_recognition_resnet_model_v1.dat')
 
-
 def prepare_training_data(data_folder_path):
     labels = []  # Names of the people
     descriptors = []  # Face descriptors
@@ -37,7 +36,6 @@ def prepare_training_data(data_folder_path):
 
     return labels, descriptors
 
-
 def compute_face_descriptor(frame):
     faces = detector(frame)
     if len(faces) > 0:
@@ -46,7 +44,6 @@ def compute_face_descriptor(frame):
         return np.array(face_descriptor)
     return None
 
-
 def match_face(face_descriptor, labels, descriptors):
     distances = [distance.euclidean(face_descriptor, descriptor) for descriptor in descriptors]
     min_distance = min(distances)
@@ -54,8 +51,6 @@ def match_face(face_descriptor, labels, descriptors):
         index = distances.index(min_distance)
         return labels[index]
     return "Unknown"
-
-
 
 class App:
     def __init__(self, master):
@@ -106,8 +101,6 @@ class App:
                     
                 self.face_labels = new_labels
 
-                
-
             else:
                 for face in faces:
                     if (face.left(), face.top()) not in self.face_labels:
@@ -126,12 +119,8 @@ class App:
             self.master.after(30, self.update_frame)
             photo = f"./predict/{name, img_count}.jpg"
             cv2.imwrite(photo, frame)
-            # foi feito: coloquei para cada label que ele reconhece, uma foto de predict e armazenar na pasta predict
-            
-
-        
-            
-        
+            # foi feito: coloquei para cada label que ele reconhece, uma foto de predict e armazenar na pasta predict  
+    
     def on_capture_click(self):
         name = self.name_entry.get()
         ret, frame = self.cap.read()
@@ -148,12 +137,10 @@ class App:
         self.labels, self.descriptors = prepare_training_data("images")
         messagebox.showinfo("Info", "Model Retrained with Updated Images!")
 
-
 def main():
     root = Tk()
     app = App(root)
     root.mainloop()
-
 
 if __name__ == '__main__':
     main()
